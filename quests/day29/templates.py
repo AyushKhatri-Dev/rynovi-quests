@@ -18,7 +18,14 @@ def chatml(messages: list[Message], add_generation_prompt: bool = False) -> str:
     TODO 29.2 · If add_generation_prompt is True, end with "<|im_start|>assistant\\n"
     so the model knows it's its turn to speak.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    st = ""
+    for msg in messages:
+        st += f"<|im_start|>{msg["role"]}\n{msg["content"]}<|im_end|>\n"
+        if add_generation_prompt:
+            st += "<|im_start|>assistant\n"
+        
+    return st 
 
 
 def llama3(messages: list[Message], add_generation_prompt: bool = False) -> str:
@@ -26,7 +33,12 @@ def llama3(messages: list[Message], add_generation_prompt: bool = False) -> str:
         "<|start_header_id|>{role}<|end_header_id|>\\n\\n{content}<|eot_id|>"
     With add_generation_prompt, end with "<|start_header_id|>assistant<|end_header_id|>\\n\\n".
     """
-    raise NotImplementedError
+    st = "<|begin_of_text|>"
+    for msg in messages:
+        st += f"<|start_header_id|>{msg["role"]}<|end_header_id|>\n\n{msg["content"]}<|eot_id|>"
+    if add_generation_prompt:
+        st += "<|start_header_id|>assistant<|end_header_id|>\n\n"
+    return st
 
 
 def check_conversation(messages: list[Message]) -> None:
@@ -36,4 +48,21 @@ def check_conversation(messages: list[Message]) -> None:
       - after the optional system message, turns must go user, assistant, user, assistant... starting with user
     Return None if it's fine.
     """
-    raise NotImplementedError
+    rl = ["system", "user", "assistant"]
+    for i, msg in enumerate(messages):
+        if msg["role"] not in rl:
+                raise ValueError(f"unknown role: {msg['role']}")
+        if msg["role"] == "system" and i != 0:
+            raise ValueError("system message must be first")
+        if messages and messages[0]["role"] == "system":
+            turns = messages[1:]
+        else:
+            turns = messages 
+        for i, msg in enumerate(turns):
+            if i % 2 == 0:
+                expected = "user"
+            else:
+                expected = "assistant"
+
+            if msg["role"] != expected:
+                raise ValueError(f"turn {i} should be {expected}, got {msg['role']}")
